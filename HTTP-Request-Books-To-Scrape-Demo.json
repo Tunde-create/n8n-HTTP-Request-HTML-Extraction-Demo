@@ -1,0 +1,366 @@
+{
+  "name": "HTTP-Request-Books-To-Scrape-Demo",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -16
+      ],
+      "id": "8c179d4e-2df2-49f2-afef-cb1a4112810a",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "url": "https://books.toscrape.com/",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        224,
+        -16
+      ],
+      "id": "1f9f39e6-a97a-4744-ae25-82b393087a4e",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "operation": "extractHtmlContent",
+        "extractionValues": {
+          "values": [
+            {
+              "key": "bookTitles",
+              "cssSelector": "article.product_pod h3 a",
+              "returnValue": "attribute",
+              "attribute": "title",
+              "returnArray": true
+            },
+            {
+              "key": "bookLinks",
+              "cssSelector": "article.product_pod h3 a",
+              "returnValue": "attribute",
+              "attribute": "href",
+              "returnArray": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        448,
+        -16
+      ],
+      "id": "1cd37e40-4bfe-40d7-8882-496641a75f67",
+      "name": "HTML"
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst data = $input.first().json;\n\n// Get the extracted book titles and links\nconst titles = data.bookTitles || [];\nconst links = data.bookLinks || [];\n\n// Combine each title with its corresponding link\nconst books = titles.map((title, index) => {\n  const link = links[index];\n\n  return {\n    title: title,\n    url: link\n      ? 'https://books.toscrape.com/' + link\n      : null\n  };\n});\n\n// Return one item containing all books\nreturn [{\n  json: {\n    totalBooks: books.length,\n    books: books\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        -16
+      ],
+      "id": "1984bd61-7482-413f-94f4-fab49ee9993e",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b9d5c0dd-bb54-48bf-b62a-4641a7f3ff1f",
+              "name": "bookRecords",
+              "value": "={{ $json.books }}",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        896,
+        -16
+      ],
+      "id": "5f9671fa-63e5-4b97-8005-b3e37c114559",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "bookRecords",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1.1,
+      "position": [
+        1120,
+        -16
+      ],
+      "id": "aa64e7c6-bb07-49d2-bce3-f604f2b4e87c",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 4
+          },
+          "conditions": [
+            {
+              "id": "02308bc0-8c0a-42de-8601-7dc9fefbf115",
+              "leftValue": "={{ $json.title }}",
+              "rightValue": "the",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {
+          "ignoreCase": true
+        }
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.4,
+      "position": [
+        1344,
+        -16
+      ],
+      "id": "8ce580ec-e04f-4f7e-ad8c-26b0834d8fa5",
+      "name": "Filter"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 4
+          },
+          "conditions": [
+            {
+              "id": "4834bc02-052e-40a6-b2da-8d20181c95e7",
+              "leftValue": "=\t{{ $json.title }}",
+              "rightValue": "the",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {
+          "ignoreCase": true
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "position": [
+        1344,
+        176
+      ],
+      "id": "e8197be0-46c0-4eb2-80ed-5cfb57041aa6",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 4
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.title }}",
+                    "rightValue": "the",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    },
+                    "id": "b93d1b8d-0552-434e-9f2a-363e760660ea"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Contains-The"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 4
+                },
+                "conditions": [
+                  {
+                    "id": "47009d46-ee21-4c31-963e-c6faa77ef1ef",
+                    "leftValue": "={{ $json.title }}",
+                    "rightValue": "a",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Contains-A"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 4
+                },
+                "conditions": [
+                  {
+                    "id": "362a3cf9-fcd6-41c3-baae-67089f6eb30f",
+                    "leftValue": "={{ $json.title }}",
+                    "rightValue": "of",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Contains-Of"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "ignoreCase": true,
+          "allMatchingOutputs": false
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.5,
+      "position": [
+        1344,
+        -272
+      ],
+      "id": "fc429147-0820-49a3-8ffc-1f3b644d97fd",
+      "name": "Switch"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTML": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "e7d7fede-72be-4acd-952a-54e726c1daa3",
+  "meta": {
+    "instanceId": "1e261049bb847df06a0c4e2088760ebdb8a0fe3ebf94be60688e9b446c3fc6b1"
+  },
+  "nodeGroups": [],
+  "id": "jKHomcvHjuSYvVde",
+  "tags": []
+}
