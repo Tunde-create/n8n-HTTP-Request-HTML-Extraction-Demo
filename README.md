@@ -1,237 +1,171 @@
-# n8n HTTP Request & HTML Extraction Demo
+# HTTP Request & HTML Extraction Demo Using n8n
 
 ## Project Overview
 
-This project demonstrates how to retrieve HTML content from a public website, extract useful information, clean and transform data, and route records using different n8n nodes.
+This project demonstrates how to retrieve publicly available HTML content from a website, extract structured information, transform the extracted data, and route records using different n8n nodes.
 
-The project was developed as a practical learning exercise to understand how APIs, HTTP requests, HTML extraction, JavaScript processing, and conditional routing work in n8n.
+The demonstration uses [Books to Scrape](https://books.toscrape.com/), a website designed for practising web scraping.
 
-**Website used for demonstration:** https://www.nairaland.com/users
-
-**Automation platform:** n8n
-
-**Project status:** Completed and successfully tested.
+**Project Type:** AI Automation Training / Practical Learning  
+**Platform:** n8n  
+**Data Source:** Books to Scrape  
+**Records Processed:** 20 books
 
 ## Project Objectives
 
-- Understand how HTTP GET requests retrieve website content.
-- Extract page titles and hyperlinks from HTML.
-- Clean, validate, and deduplicate extracted URLs using JavaScript.
-- Understand how Edit Fields modifies data structures.
-- Convert arrays into individual items using Split Out.
+- Understand how HTTP requests retrieve website content.
+- Extract book titles and links from HTML.
+- Transform extracted data using JavaScript.
+- Understand arrays and individual JSON items.
+- Demonstrate data filtering and conditional routing.
 - Compare Filter, IF, and Switch nodes.
-- Test and validate workflow outputs.
-- Document the completed workflow for reuse and learning.
+- Test and document workflow execution results.
 
 ## Workflow Architecture
 
-The workflow consists of the following nodes:
+The workflow begins with a Manual Trigger, followed by an HTTP Request, HTML extraction, JavaScript transformation, Edit Fields, and Split Out nodes.
+
+Three independent branches from Split Out demonstrate Filter, IF, and Switch operations.
 
 ```text
 Manual Trigger
       |
-HTTP Request
+HTTP Request (GET)
       |
-HTML
+HTML Extraction
       |
-Code in JavaScript
+Code (JavaScript)
       |
 Edit Fields
       |
-Split Out
+Split Out (20 Books)
       |
-      +------ Filter
+      +---- Filter
       |
-      +------ IF
+      +---- IF
       |
-      +------ Switch
+      +---- Switch
 ```
 
-The Filter, IF, and Switch nodes are connected independently to Split Out so they can process the same input data.
+## Nodes and Their Functions
 
-## Node-by-Node Explanation
+| Node | Function |
+|---|---|
+| Manual Trigger | Starts the workflow manually |
+| HTTP Request | Retrieves HTML from Books to Scrape |
+| HTML | Extracts book titles and relative links using CSS selectors |
+| Code (JavaScript) | Combines titles and links into structured book records |
+| Edit Fields | Creates a `bookRecords` array |
+| Split Out | Converts the array into 20 individual items |
+| Filter | Keeps records whose titles contain `the` |
+| IF | Separates records into True and False outputs |
+| Switch | Routes records according to multiple title-matching rules |
 
-### 1. Manual Trigger
+## Data Extraction
 
-Starts the workflow manually for testing and demonstration.
+**Website:** https://books.toscrape.com/
 
-### 2. HTTP Request
+**CSS Selector:**
 
-- Method: GET
-- URL: https://www.nairaland.com/users
-- Purpose: Retrieve HTML content from the website.
+`article.product_pod h3 a`
 
-The returned HTML is stored in the `data` field.
+The HTML node extracts:
 
-### 3. HTML Node
+- `bookTitles` — an array of book titles.
+- `bookLinks` — an array of relative book URLs.
 
-Extracts information from the HTML response.
+The JavaScript node combines these arrays and constructs complete book URLs.
 
-Two extraction fields were configured:
+The resulting data contains a `totalBooks` count and a `books` array.
 
-| Field | CSS Selector | Extracted Data |
-|---|---|---|
-| pageTitle | `title` | Website page title |
-| pageLinks | `a` | Hyperlink `href` attributes |
+## Testing and Results
 
-The `pageLinks` extraction returns an array of links.
+### HTML Extraction and Transformation
 
-### 4. Code in JavaScript
+Successfully extracted and transformed 20 book records.
 
-Processes the extracted hyperlinks.
+### Split Out Node
 
-The JavaScript code:
+Successfully converted the array of 20 books into 20 individual n8n items.
 
-- Removes invalid and empty values.
-- Trims unnecessary whitespace.
-- Converts relative links to absolute URLs.
-- Removes duplicate URLs.
-- Counts the cleaned links.
+### Filter Node
 
-**Test result: 46 unique cleaned URLs.**
+Condition: Book title contains `the`, ignoring case.
 
-### 5. Edit Fields
+- Kept: 10
+- Discarded: 10
 
-Demonstrates how to rename and restructure fields.
+### IF Node
 
-The original `cleanLinks` array was renamed to `websiteLinks`.
+Condition: Book title contains `the`, ignoring case.
 
-**Test result:** One item containing an array of 46 URLs.
+- True: 10
+- False: 10
 
-### 6. Split Out
+### Switch Node
 
-Converts the `websiteLinks` array into individual n8n items.
+The Switch node uses three routing conditions and an additional fallback output.
 
-**Test result:** 46 separate items, each containing one URL.
-
-### 7. Filter
-
-Filters URLs based on a condition.
-
-**Condition:** URL contains `/politics`.
-
-Results:
-
-- Input: 46 items
-- Kept: 2 items
-- Discarded: 44 items
-
-This demonstrated how the Filter node selects matching records.
-
-### 8. IF
-
-Demonstrates two-way conditional routing using the same `/politics` condition.
-
-Results:
-
-| Branch | Items |
-|---|---:|
-| True | 2 |
-| False | 44 |
-| Total | 46 |
-
-This demonstrated how the IF node routes matching and non-matching records through separate outputs.
-
-### 9. Switch
-
-Demonstrates multiple conditional routing outputs.
-
-The following categories were configured:
-
-| Category | Condition | Items |
+| Output | Condition | Items |
 |---|---|---:|
-| Politics | Contains `/politics` | 2 |
-| Business | Contains `/business` | 1 |
-| Jobs | Contains `/jobs` | 2 |
-| Other | Fallback output | 41 |
-| **Total** | | **46** |
+| Contains-The | Title contains `the` | 10 |
+| Contains-A | Title contains `a` | 6 |
+| Contains-Of | Title contains `of` | 0 |
+| Fallback | No rule matched | 4 |
+| **Total** | | **20** |
 
-The Switch node successfully distributed all 46 items across four outputs.
+The workflow was configured to route each book to its first matching output.
 
-## Filter vs IF vs Switch
+All 20 records were accounted for without duplication.
 
-| Feature | Filter | IF | Switch |
-|---|---|---|---|
-| Main purpose | Select records | Two-way routing | Multiple routing |
-| Matching records | Passed onward | True branch | Matching rule output |
-| Non-matching records | Excluded from main output | False branch | Other matching rule or fallback |
-| Typical application | Data selection | Conditional decisions | Categorization |
+## Key Lessons Learned
 
-## Challenges Encountered and Solutions
+1. An HTTP Request can retrieve HTML rather than JSON.
+2. CSS selectors help extract specific information from HTML.
+3. JavaScript can transform extracted arrays into structured objects.
+4. Edit Fields can prepare data for downstream nodes.
+5. Split Out converts an array into separate workflow items.
+6. Filter removes items that fail a condition.
+7. IF separates matching and non-matching items into two branches.
+8. Switch supports multiple routing rules and fallback handling.
+9. Rule order matters when records can satisfy multiple conditions.
+10. Testing each node independently makes troubleshooting easier.
 
-### Challenge 1: Invalid hyperlinks
+## Tools and Technologies
 
-The HTML extraction returned a mixture of relative URLs, absolute URLs, empty values, and other link formats.
+- n8n
+- HTTP GET requests
+- HTML and CSS selectors
+- JavaScript
+- JSON
+- GitHub
 
-**Solution:** JavaScript filtering and string operations were used to validate, normalize, and deduplicate the links.
+## Workflow File
 
-### Challenge 2: URL is not defined
+`HTTP-Request-Books-To-Scrape-Demo.json`
 
-An initial JavaScript approach using the `URL` constructor produced an error in the n8n Code node environment.
+Import this file into n8n to examine and run the demonstration.
 
-**Solution:** Relative URLs were converted into absolute URLs using string concatenation with the website's base address.
+## Responsible Web Scraping
 
-### Challenge 3: Understanding Edit Fields vs Split Out
+This project uses Books to Scrape, a website intentionally provided for web scraping practice.
 
-Both nodes were tested using the same array.
+For other websites, review their terms, robots.txt, applicable laws, and access restrictions before collecting data. Avoid excessive requests and do not collect private information without an appropriate legal basis.
 
-**Solution:** Practical execution demonstrated that Edit Fields preserved the array within one item, while Split Out generated 46 individual items.
+## Project Status
 
-### Challenge 4: Extra Switch routing rule
+**Completed — Successfully Tested**
 
-An unintended fourth routing rule resulted in an additional output.
-
-**Solution:** The extra rule was removed, leaving three configured routing rules and one Fallback Output.
-
-The workflow was executed again and all 46 items were correctly distributed.
-
-## Key Learning Outcomes
-
-This project improved practical understanding of:
-
-1. HTTP GET requests and HTML responses.
-2. CSS selectors and HTML data extraction.
-3. JavaScript data cleaning and transformation.
-4. Arrays versus individual n8n items.
-5. Conditional filtering and routing.
-6. Workflow testing and debugging.
-7. Exporting n8n workflows as reusable JSON files.
-8. Technical documentation and version control using GitHub.
-
-## Installation and Usage
-
-1. Install or access an n8n instance.
-2. Download the workflow JSON file from this repository.
-3. Open n8n and create a new workflow.
-4. Import the downloaded JSON file.
-5. Review the HTTP Request URL and node configurations.
-6. Execute the workflow manually.
-7. Inspect the outputs of the HTML, Code, Edit Fields, Split Out, Filter, IF, and Switch nodes.
-
-**Note:** The workflow depends on the structure and accessibility of the external website. If the website changes its HTML structure or link content, the extraction results may change.
-
-## Screenshots
-
-Screenshots of the workflow, node configurations, and successful execution results will be added to the repository.
-
-## Project Purpose
-
-This project was developed for educational purposes and hands-on AI automation training.
-
-It demonstrates how n8n can retrieve, transform, filter, and route website data using visual workflow nodes and JavaScript.
+All primary workflow nodes were configured and tested, including Filter, IF, and Switch routing.
 
 ## Future Improvements
 
-Potential extensions include:
+- Extract book prices and ratings.
+- Add pagination to retrieve more books.
+- Save extracted records to Google Sheets.
+- Explore scheduling and error handling.
+- Compare HTML extraction with API-based data retrieval.
 
-- Saving extracted links to Google Sheets.
-- Categorizing links using additional conditions.
-- Adding scheduled execution.
-- Implementing error handling.
-- Creating summary reports from extracted data.
+## Author
 
-## Conclusion
-
-The workflow successfully retrieved HTML content, extracted and cleaned website hyperlinks, converted an array into individual items, and demonstrated conditional processing using Filter, IF, and Switch nodes.
-
-All major workflow components were tested successfully, and the final workflow was exported for reuse and documentation.
+Developed as a hands-on n8n automation learning project.
